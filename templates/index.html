@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Smart Refill Predictor</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- HEADER -->
+
+        <div class="header">
+
+            <div>
+
+                <p class="project-tag">
+                    DATA SCIENCE PROJECT
+                </p>
+
+                <h1>
+                    Smart Household Item Refill Predictor
+                </h1>
+
+            </div>
+
+            <div class="date-box">
+
+                <p>Today</p>
+
+                <h3 id="todayDate"></h3>
+
+            </div>
+
+        </div>
+
+        <!-- TOP FORMS -->
+
+        <div class="top-grid">
+
+            <!-- ADD ITEM -->
+
+            <div class="card">
+
+                <h2>Add Household Item</h2>
+
+                <form action="/add_item"
+                      method="POST">
+
+                    <label>Item Name</label>
+
+                    <input type="text"
+                           name="item_name"
+                           placeholder="Milk"
+                           required>
+
+                    <div class="row">
+
+                        <div>
+
+                            <label>Current Quantity</label>
+
+                            <input type="number"
+                                   step="0.1"
+                                   name="quantity"
+                                   placeholder="5"
+                                   required>
+
+                        </div>
+
+                        <div>
+
+                            <label>Unit</label>
+
+                            <select name="unit">
+
+                                <option>L</option>
+                                <option>kg</option>
+                                <option>ml</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                    <label>Purchase Date</label>
+
+                    <input type="date"
+                           name="purchase_date"
+                           required>
+
+                    <label>Average Daily Usage</label>
+
+                    <input type="number"
+                           step="0.1"
+                           name="avg_usage"
+                           placeholder="Example: 500"
+                           required>
+
+                    <small>
+                        Enter average quantity used per day
+                    </small>
+
+                    <button type="submit">
+                        Add Item
+                    </button>
+
+                </form>
+
+            </div>
+
+            <!-- UPDATE USAGE -->
+
+            <div class="card">
+
+                <h2>Update Daily Usage</h2>
+
+                <form action="/update_usage"
+                      method="POST">
+
+                    <label>Select Item</label>
+
+                    <select name="item">
+
+                        {% for item in items %}
+
+                        <option value="{{ item.item }}">
+                            {{ item.item }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                    <label>Date</label>
+
+                    <input type="date"
+                           name="date"
+                           required>
+
+                    <label>Quantity Used</label>
+
+                    <input type="number"
+                           step="0.1"
+                           name="used"
+                           placeholder="Example: 250"
+                           required>
+
+                    <small>
+                        Enter quantity used today
+                    </small>
+
+                    <button type="submit">
+                        Save Usage
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <!-- ALERTS -->
+
+        {% for p in predictions %}
+
+            {% if p.days_left <= 2 %}
+
+                <div class="alert-box critical-alert">
+
+                    ⚠ {{ p.item }} is running low!
+                    Refill within {{ p.days_left }} days.
+
+                </div>
+
+            {% elif p.days_left <= 5 %}
+
+                <div class="alert-box low-alert">
+
+                    🟠 {{ p.item }} stock is getting low.
+
+                </div>
+
+            {% endif %}
+
+        {% endfor %}
+
+        <!-- GRAPH SECTION -->
+
+        <div class="graph-card">
+
+            <h2>Usage Trend</h2>
+
+            <p>
+                Track daily consumption of household items
+            </p>
+
+            <!-- ITEM SELECT -->
+
+            <form method="GET">
+
+                <select name="item"
+                        class="graph-select"
+                        onchange="this.form.submit()">
+
+                    {% for item in items %}
+
+                        <option value="{{ item.item }}"
+
+                            {% if item.item == selected_item %}
+                                selected
+                            {% endif %}
+
+                        >
+
+                            {{ item.item }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </form>
+
+            <canvas id="usageChart"></canvas>
+
+        </div>
+
+        <!-- PREDICTION SECTION -->
+
+        <div class="prediction-header">
+
+            <div>
+
+                <h2>AI Prediction Dashboard</h2>
+
+                <p>
+                    Forecast uses moving average and usage trend.
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- PREDICTION CARDS -->
+
+        <div class="prediction-grid">
+
+            {% for p in predictions %}
+
+            <div class="prediction-card">
+
+                <div class="card-top">
+
+                    <h2>{{ p.item }}</h2>
+
+                    <span class="{{ p.status_class }}">
+                        {{ p.status }}
+                    </span>
+
+                </div>
+
+                <div class="mini-grid">
+
+                    <div class="mini-box">
+
+                        <p>Days left</p>
+
+                        <h3>{{ p.days_left }} days</h3>
+
+                    </div>
+
+                    <div class="mini-box">
+
+                        <p>Refill date</p>
+
+                        <h3>{{ p.refill_date }}</h3>
+
+                    </div>
+
+                </div>
+
+                <div class="info-row">
+
+                    <p>Current quantity</p>
+
+                    <strong>
+                        {{ p.remaining }} {{ p.unit }}
+                    </strong>
+
+                </div>
+
+                <div class="info-row">
+
+                    <p>Average usage</p>
+
+                    <strong>
+                        {{ p.avg_usage }}/day
+                    </strong>
+
+                </div>
+
+                <div class="info-row">
+
+                    <p>Predicted usage</p>
+
+                    <strong>
+                        {{ p.avg_usage }}/day
+                    </strong>
+
+                </div>
+
+                <!-- REMOVE BUTTON -->
+
+                <form action="/delete_item"
+                      method="POST">
+
+                    <input type="hidden"
+                           name="item"
+                           value="{{ p.item }}">
+
+                    <button type="submit"
+                            class="delete-btn">
+
+                        Remove Item
+
+                    </button>
+
+                </form>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <!-- GRAPH DATA -->
+
+    <script id="graph-labels"
+            type="application/json">
+
+        {{ graph_labels | tojson }}
+
+    </script>
+
+    <script id="graph-values"
+            type="application/json">
+
+        {{ graph_values | tojson }}
+
+    </script>
+
+    <!-- CHART JS -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- JS -->
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>
